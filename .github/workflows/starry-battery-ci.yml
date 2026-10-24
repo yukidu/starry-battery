@@ -50,5 +50,14 @@ jobs:
           test -f CENTRAL_AUTH_BINDING_CONTRACT.md
           test -f deploy/battery-targets.json
           node --input-type=module -e "import fs from 'node:fs';const x=JSON.parse(fs.readFileSync('rules-catalog.json'));if(x.production_ready!==false)process.exit(1)"
+      - name: Independent Cloudflare Preview health and missing-auth smoke
+        run: |
+          set -eu
+          base="https://starry-battery-gateway-preview-v2-20261024.yukidu.workers.dev"
+          curl --fail --silent --show-error --retry 3 --max-time 15 "$base/health" -o /tmp/starry-battery-preview-health.json
+          node --input-type=module -e "import fs from 'node:fs';const x=JSON.parse(fs.readFileSync('/tmp/starry-battery-preview-health.json'));if(x.service!=='starry-battery-gateway'||x.status!=='reachable')process.exit(1)"
+          status="$(curl --silent --show-error --retry 3 --max-time 15 -o /tmp/starry-battery-preview-denial.json -w '%{http_code}' "$base/v1/battery/wallet")"
+          test "$status" = "503"
+          node --input-type=module -e "import fs from 'node:fs';const x=JSON.parse(fs.readFileSync('/tmp/starry-battery-preview-denial.json'));if(x.error!=='dependency_unavailable')process.exit(1)"
       - name: Confirm no Production deployment by CI
         run: echo "Tests only; production feature flags remain off."
