@@ -25,6 +25,21 @@ Demo `GET /v1/battery/wallet` 回傳固定假資料，如：
 ```json
 {"available_units":50,"spendable_units":50,"debt_units":0,"reserved_units":0,"overdraft_remaining":2,"overdraft_in_progress":false,"version":1,"environment":"synthetic_sandbox","synthetic":true,"real_member_data":false,"real_money":false,"can_write":false}
 ```
+## 二之一、完全假的預留／結算／取消 API 格式演練
+公開 Demo 額外提供 **僅限 `/sandbox/simulate/*` 路徑**的純回應模擬：
+```bash
+curl -sS -X POST "$BATTERY_DEMO_BASE_URL/sandbox/simulate/reserve" \
+ -H 'Content-Type: application/json' \
+ -d '{"operation_id":"sandbox_op_1234","quantity":5}'
+curl -sS -X POST "$BATTERY_DEMO_BASE_URL/sandbox/simulate/commit" \
+ -H 'Content-Type: application/json' \
+ -d '{"operation_id":"sandbox_op_1234"}'
+curl -sS -X POST "$BATTERY_DEMO_BASE_URL/sandbox/simulate/release" \
+ -H 'Content-Type: application/json' \
+ -d '{"operation_id":"sandbox_op_1234"}'
+```
+回應含 `synthetic:true`、`not_persisted:true`、`no_real_charges:true`。這些是**無狀態、純格式示範**，即使先模擬 commit 再 release，真正錢包也完全不會改變；它們**不驗證**實際財務冪等、付款、庫存一致性或逾時。正式 API 的 `/v1/battery/reserve|commit|release` 在 Demo 主機仍一律回 405。
+
 **切勿**把這個固定數字當成真實會員電池；它不會根據登入會員改變。Demo 會拒絕 `Authorization`、`X-Central-Access-Token`、`Cookie`，避免誤將正式金鑰送至公開展示站。所有 `POST /v1/battery/*` 直接回 `405 demo_write_disabled`，絕不進行扣款或贈送。
 
 ## 三、真實 Battery API（目前不可正式使用）
