@@ -38,13 +38,21 @@ jobs:
       - name: Check isolated Preview config and disabled finance switches
         env:
           BATTERY_TARGET: preview
-          BATTERY_D1_ID: "00000000-0000-4000-8000-000000000000"
-          BATTERY_D1_NAME: "battery-ci-fixture"
-          BATTERY_R2_BUCKET: "starry-battery-ledger-ci-fixture"
+          BATTERY_D1_ID: "cd93105f-7963-4a0d-bbb5-fc11e4555a5e"
+          BATTERY_D1_NAME: "starry-battery-overdraft-preview-20261024"
+          BATTERY_R2_BUCKET: "starry-battery-ledger-preview-20261024"
         run: |
           node deploy/generate-config.mjs
-          node --input-type=module -e "import fs from 'node:fs';const e=JSON.parse(fs.readFileSync('.wrangler.engine.generated.json'));const g=JSON.parse(fs.readFileSync('.wrangler.gateway.generated.json'));const a=JSON.parse(fs.readFileSync('.wrangler.archive.generated.json'));if(e.name!=='starry-battery-engine-preview'||g.name!=='starry-battery-gateway-preview'||a.name!=='starry-battery-archive-preview'||e.vars.BATTERY_OPERATIONS_ENABLED!=='false'||e.vars.BATTERY_CREDIT_ENABLED!=='false'||e.vars.BATTERY_OVERDRAFT_ENABLED!=='false'||a.vars.BATTERY_ARCHIVE_ENABLED!=='false'||g.r2_buckets[0].bucket_name!=='starry-battery-ledger-ci-fixture')process.exit(1)"
+          node --input-type=module -e "import fs from 'node:fs';const e=JSON.parse(fs.readFileSync('.wrangler.engine.generated.json'));const g=JSON.parse(fs.readFileSync('.wrangler.gateway.generated.json'));const a=JSON.parse(fs.readFileSync('.wrangler.archive.generated.json'));if(e.name!=='starry-battery-engine-preview-v2-20261024'||g.name!=='starry-battery-gateway-preview-v2-20261024'||a.name!=='starry-battery-archive-preview-v2-20261024'||e.vars.BATTERY_OPERATIONS_ENABLED!=='false'||e.vars.BATTERY_CREDIT_ENABLED!=='false'||e.vars.BATTERY_OVERDRAFT_ENABLED!=='false'||a.vars.BATTERY_ARCHIVE_ENABLED!=='false'||g.r2_buckets[0].bucket_name!=='starry-battery-ledger-preview-20261024')process.exit(1)"
           rm .wrangler.*.generated.json
+      - name: Reject manifest mismatch and Central D1 accidentally configured as Battery
+        env:
+          BATTERY_TARGET: preview
+          BATTERY_D1_ID: "ca08ee86-7b39-46fe-a578-611d1bee312c"
+          BATTERY_D1_NAME: "starry-battery-overdraft-preview-20261024"
+          BATTERY_R2_BUCKET: "starry-battery-ledger-preview-20261024"
+        run: |
+          if node deploy/generate-config.mjs; then echo "ERROR: Central D1 accepted"; exit 1; fi
       - name: Verify cross-App and Central auth boundaries
         run: |
           test -f CENTRAL_AUTH_BINDING_CONTRACT.md
