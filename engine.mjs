@@ -121,6 +121,14 @@ export async function settle(db,c,action,time=nowMs()){
  }
 }
 
+// Permanent product rule (2026-10-24): Starry Battery is always FREE.
+// Even an authenticated internal issuer cannot convert any payment/IAP/top-up
+// into Battery. Every free credit source requires an explicit code review.
+const FREE_CREDIT_SOURCES=new Set([
+ "gift","free_grant","signup","signup_gift","first_approval","approval_gift",
+ "reward","earned","earned_reward","event_reward","legacy_claim",
+ "legacy_balance","migration","admin_grant","manual_grant","free_bonus"
+]);
 // Private, trusted credit issuance primitive. No public/app-facing grant route.
 // Retrying a duplicate credit_id never gives additional battery. Credit delivery
 // during an active overdraft returns 409; the issuer must retry after settlement.
@@ -129,6 +137,7 @@ export async function applyCredit(db,c,time=nowMs()){
   !/^[a-z0-9_-]{3,80}$/.test(c.source||"")||!validQuantity(c.quantity)||
   !Number.isSafeInteger(c.expires_at_ms)||c.expires_at_ms<=time)
   return reply({error:"invalid_credit"},400);
+ if(!FREE_CREDIT_SOURCES.has(c.source))return reply({error:"paid_or_unapproved_battery_credit_forbidden"},403);
  const existing=await first(db,"SELECT credit_id,user_id,quantity,source,expires_at_ms FROM battery_credit_receipts WHERE credit_id=?",c.credit_id);
  if(existing)return existing.user_id===c.user_id&&existing.quantity===c.quantity&&existing.source===c.source&&existing.expires_at_ms===c.expires_at_ms
   ?reply({credit_id:c.credit_id,idempotent:true}):reply({error:"credit_conflict"},409);
