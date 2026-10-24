@@ -9,12 +9,13 @@
 | **Battery 私有 Preview** | 各款 App 後端 Key + 中央 Sandbox Token | 獨立 Preview D1、R2 | 僅限測試資料且須再通過 Private Auth E2E | 內部 App 串接與寫入測試 |
 | **正式 Production** | 各款 App 正式 Key + 中央會員正式 Token | 獨立 Production D1／R2 | **目前不允許** | 待中央 Auth、付款、財務/安全/回退驗收後開通 |
 
-公開 Demo 會在正式 Sandbox URL 啟用後提供具體網址。程式：`sandbox-demo.mjs`。
+公開 Demo 已部署：**https://starry-battery-api-sandbox-20261024.yukidu.workers.dev**，且沒有任何 D1／R2／Secrets／Service Binding。程式：`sandbox-demo.mjs`。
 
 ## 二、Demo API 範例
-範例用環境變數 `BATTERY_DEMO_BASE_URL`（只有已實際部署後才填正式 URL）：
+範例用環境變數 `BATTERY_DEMO_BASE_URL`（已部署，請使用下列測試網址）：
 
 ```bash
+BATTERY_DEMO_BASE_URL='https://starry-battery-api-sandbox-20261024.yukidu.workers.dev'
 curl -i "$BATTERY_DEMO_BASE_URL/health"
 curl -i "$BATTERY_DEMO_BASE_URL/v1/battery/wallet"
 curl -i "$BATTERY_DEMO_BASE_URL/v1/battery/ledger"
