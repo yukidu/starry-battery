@@ -1,6 +1,6 @@
 // One-shot isolated multi-App sandbox verification via PRIVATE Service Binding.
 // Only synthetic wallets in sandbox D1. Reports go to separate Battery E2E D1.
-const RUN_ID="starry-battery-multiapp-sandbox-e2e-20261024-01";
+const RUN_ID="starry-battery-multiapp-sandbox-e2e-20261024-02";
 async function runSandbox(env){
   if(!env?.BATTERY_E2E_DB?.prepare||!env?.BATTERY_SANDBOX_GATEWAY?.fetch||!env?.SANDBOX_QA_APPS)throw Error("sandbox_e2e_not_configured");
   const db=env.BATTERY_E2E_DB;
@@ -25,7 +25,7 @@ async function runSandbox(env){
   await check("forged_member_denied",async()=>{const r=await ask(x.alpha,"invalid_fake_member_token_".repeat(2));return r.status===403;});
   await check("missing_user_token_denied",async()=>{const r=await ask(x.alpha,"");return r.status===401;});
   await check("balance_only_app_cannot_read_ledger",async()=>{const r=await ask(x.beta,x.user1,"/v1/battery/ledger");return r.status===403&&r.data.error==="scope_forbidden";});
-  await check("no_charge_in_sandbox",async()=>{const r=await ask(x.alpha,x.user1,"/v1/battery/reserve","POST");return r.status===503||r.status===415;});
+  await check("no_charge_in_sandbox",async()=>{const r=await ask(x.alpha,x.user1,"/v1/battery/reserve","POST");return r.status===403&&r.data.error==="scope_forbidden";});
   const passed=checks.filter(y=>y.pass).length,total=checks.length;
   await db.prepare("INSERT INTO battery_multiapp_sandbox_results(run_id,passed,total,report) VALUES(?,?,?,?)").bind(RUN_ID,passed,total,JSON.stringify({run_id:RUN_ID,passed,total,checks,synthetic_only:true,production_data:false})).run();
  }
