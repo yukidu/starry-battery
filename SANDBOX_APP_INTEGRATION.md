@@ -1,6 +1,9 @@
+## 2026-10-24 最新正式決議：永久免費與部署溝通
+**Starry Battery 永遠免費，不得透過內購、外購、訂閱或付款購買與儲值。** 中央 AI 處理其他產品付款不得觸發 Battery `/v1/credit`，只允許具名、有權限、可稽核的**免費**發放。使用者已指定正式上線前不再提供測試預覽網站網址，也不要求人工開啟測試站；下列 Sandbox 端點屬**工程內部**測試與接口文件，不作為提供使用者的交付連結。所有內部測試/資安與部署 Gate 仍須完成，通過後直接發 Production 並回報正式結果。
+
 # Starry Battery｜30 款 App 接入手冊｜開發 Sandbox v1
 
-**進度：** 這份手冊描述獨立 Sandbox 展示 API 和正式 API 契約的界線。**這不是可用的正式電池金流服務**。
+**進度：** 這份手冊描述獨立 Sandbox 展示 API 和正式 API 契約的界線。**這不是可用的正式會員電池服務；電池永久不提供付費購買**。
 
 ## 一、環境比較（務必分開）
 | 環境 | API 身分 | 資料 | 可正式扣款 | 用途 |
@@ -86,7 +89,7 @@ try{
 4. 本 Repo `main` 啟用保護規則、正式部署環境核准及 Secrets 審查。
 5. Preview 使用合成假會員進行完整 App→Gateway→Central Sandbox Auth→Engine→Preview D1 E2E。
 6. AI 推論前由後端限制模型、Token、作業次數與最高成本；惡意呼叫與透支須限流警報。
-7. 買電池必須先完成金流的伺服器端付款驗證、不可重播的訂單 ID、退款與拒付對帳；目前 `rules-catalog.json.production_ready=false`，付款功能仍停用。
+7. 繁星電池永久禁止購買：不可開發任何 Battery 付款 SKU、訂閱換電池、外購／內購結算入帳；免費贈送須有來源核准、稽核、去重與防濫用驗收。`rules-catalog.json.production_ready=false`，正式會員 API 尚未全面開放。
 8. Cloudflare Production 的扣款、贈送、透支、R2 自動封存一律不得因 Demo 上線而打開。
 
 ## 五、開發者驗收
