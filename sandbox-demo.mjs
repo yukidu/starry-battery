@@ -27,7 +27,7 @@ export default{
   // no member exists, and no AI inference or paid battery can be triggered.
   const simulated=({"/sandbox/simulate/reserve":"reserve","/sandbox/simulate/commit":"commit","/sandbox/simulate/release":"release"})[url.pathname];
   if(simulated&&request.method==="POST"){
-   if(!/^application\\/json(?:;|$)/i.test(request.headers.get("Content-Type")||""))
+   if(!(request.headers.get("Content-Type")||"").toLowerCase().startsWith("application/json"))
      return response({...banner,error:"invalid_demo_content_type"},415);
    let value;
    try{const raw=await request.text();if(raw.length>512)return response({...banner,error:"demo_payload_too_large"},413);value=JSON.parse(raw);}
