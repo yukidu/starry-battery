@@ -33,6 +33,8 @@ jobs:
           node --check engine.mjs
           node --check worker.mjs
           node --check archive.mjs
+          node --check sandbox-demo.mjs
+          node --check client/server-battery-client.mjs
           node --check deploy/generate-config.mjs
           node --check deploy/verify-battery-cloudflare.mjs
       - name: Check isolated Preview config and disabled finance switches
@@ -56,6 +58,7 @@ jobs:
       - name: Verify cross-App and Central auth boundaries
         run: |
           test -f CENTRAL_AUTH_BINDING_CONTRACT.md
+          test -f SANDBOX_APP_INTEGRATION.md
           test -f deploy/battery-targets.json
           node --input-type=module -e "import fs from 'node:fs';const x=JSON.parse(fs.readFileSync('rules-catalog.json'));if(x.production_ready!==false)process.exit(1)"
       - name: Independent Cloudflare Preview health and missing-auth smoke
