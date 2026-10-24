@@ -1,0 +1,39 @@
+name: Starry Battery production read-only preflight
+
+# No mutation: checks existing D1/R2 and verifies isolated Workers/bindings.
+# This is separate from the explicit, gated Battery deployment workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Read-only Battery target"
+        required: true
+        type: choice
+        options: [preview, production]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ inputs.target == 'production' && 'production-starry-battery' || 'preview-starry-battery' }}
+  cancel-in-progress: false
+
+jobs:
+  battery-cloudflare-read-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: ${{ inputs.target == 'production' && 'battery-production' || 'battery-preview' }}
+    env:
+      CLOUDFLARE_API_TOKEN_BATTERY: ${{ secrets.CLOUDFLARE_API_TOKEN_BATTERY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Battery-only read-only unit checks
+        run: node --test test/battery-release-preflight.test.mjs
+      - name: Inspect only Battery Cloudflare resources
+        run: node deploy/verify-battery-cloudflare.mjs "${{ inputs.target }}"
+      - name: Confirm this is NOT Production activation
+        run: echo "GET-only Cloudflare inventory; no D1 migration, routes, Secrets, Worker deploy, or Battery transactions."
