@@ -1,3 +1,8 @@
+## 2026-10-24 最新最高優先正式決議覆寫
+1. Starry Battery 永久免費，不可販售、儲值、內購、外購、訂閱換購或使用任何付款事件核發電池。舊「付費電池、IAP 購買、未來購買功能保留」內容已全部廢止；免費贈送等仍依 M06 授權、稽核與去重。
+2. 未正式上線前不向使用者提供 Preview/Sandbox 網站網址或要求手動測試；仍須完成所有內部 CI/Preview、真實安全 E2E、正式授權與回退。符合 Gate 後直接 Production 發布並回報核實正式結果，不得因跳過 user preview 而跳過安全驗收。
+3. 本檔歷史 dark-deploy 證據仍不代表正式會員 API 已上線；Production 金融/交易開關與資料庫保持原狀直到通過必要 Gate。
+
 # Starry Battery｜Production 發布實際盤點｜2026-10-24
 
 > **狀態：正式 D1/R2 與**三個私有暗部署 Production Workers** 均已建置；仍未公開／未啟用會員扣款。**
