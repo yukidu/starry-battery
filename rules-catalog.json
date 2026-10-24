@@ -1,0 +1,156 @@
+{
+  "catalog_version": "2026-10-24.5",
+  "authority": "M06 official Google Doc, this catalog is an implementation index not a new decision",
+  "m06_url": "https://docs.google.com/document/d/10XEaZagWP_hwF1kn3JidrjYyfE3-7L9SZLND2CZdAXA/edit",
+  "overview_url": "https://docs.google.com/document/d/1T-SXNilxJ9QnwHotDkFAC3OHIbZtpPo0KJ8PgcDeRLc/edit",
+  "production_ready": false,
+  "status_definitions": {
+    "decided": "正式需求但不等於已實作",
+    "developed": "已有候選開發分支程式，未通過正式驗收／上線",
+    "pending": "尚待確認且禁止自動啟用",
+    "unverified": "待端到端驗證"
+  },
+  "rules": [
+    {
+      "id": "BAT-A01",
+      "name": "Starry-only scope",
+      "status": "decided",
+      "applicability": "Starry ecosystem only",
+      "hglobal_battery_allowed": false
+    },
+    {
+      "id": "BAT-A02",
+      "name": "Shared central wallet",
+      "status": "decided",
+      "wallet_scope": "central user_id across Starry Apps",
+      "d1_direct_app_access": false
+    },
+    {
+      "id": "BAT-A03",
+      "name": "Per-app gateway auth and rate limiting",
+      "status": "developed",
+      "rate_limit_default_per_minute": 120,
+      "rate_limit_schema_range": [
+        1,
+        10000
+      ],
+      "enabled_by_default": false
+    },
+    {
+      "id": "BAT-B01",
+      "name": "Reserve/commit/release",
+      "status": "developed",
+      "user_manual_controls": false,
+      "require_real_d1_e2e": true
+    },
+    {
+      "id": "BAT-B02",
+      "name": "Timeout full refund",
+      "status": "developed",
+      "timeout_default_seconds": 180,
+      "require_scheduler_and_d1_e2e": true
+    },
+    {
+      "id": "BAT-B03",
+      "name": "FEFO and expiry protection",
+      "status": "developed",
+      "must_not_recredit_expired_lots": true,
+      "require_d1_e2e": true
+    },
+    {
+      "id": "BAT-B04",
+      "name": "Idempotency and concurrent spending protection",
+      "status": "developed",
+      "require_concurrency_test": true
+    },
+    {
+      "id": "BAT-B05",
+      "name": "Two successful overdraft AI operations, reset immediately when debt paid",
+      "status": "developed",
+      "enabled": false,
+      "wording": "餘額可以接受負數二次，不論數字多大",
+      "existing_schema_check": "wallet lots stay nonnegative, debt separately accounted",
+      "successful_overdraft_limit": 2,
+      "concurrent_overdraft_limit": 1,
+      "timeout_seconds": 180,
+      "reset_when_debt_zero": true,
+      "topup_repay_debt_first": true,
+      "per_transaction_business_cap": null,
+      "technical_integer_limit": 9007199254740991,
+      "required_gates": [
+        "atomic real D1 concurrent reserve and settlement E2E",
+        "credit-repayment racing settlement E2E",
+        "migration and rollback",
+        "protected central auth binding",
+        "independent production gate"
+      ],
+      "implementation_status": "Preview candidate tested on isolated Cloudflare D1 14/14 (run bat-d1-e2e-overdraft-20261024-05), with runtime overdraft flag default false; live auth and Production not accepted"
+    },
+    {
+      "id": "BAT-C01",
+      "name": "Gift battery expiry",
+      "status": "decided",
+      "expiry_months": 24,
+      "expiry_at_month_end": true,
+      "implementation": "unverified"
+    },
+    {
+      "id": "BAT-C02",
+      "name": "Signup/approval grants",
+      "status": "unverified",
+      "signup_proposed_units": 10,
+      "first_approval_proposed_units": 20,
+      "no_retroactive_grants": true
+    },
+    {
+      "id": "BAT-C03",
+      "name": "Ledger archive",
+      "status": "developed",
+      "d1_recent_months": 12,
+      "r2_archive_after_reconciliation": true,
+      "enabled": false,
+      "implementation": "private archive Worker + D1 SHA-256 index + user-scoped R2 reads; real preview R2/D1 E2E passed, production disabled",
+      "test_run_id": "bat-r2-archive-e2e-20261024-01",
+      "production_ready": false
+    },
+    {
+      "id": "BAT-C04",
+      "name": "Purchasing batteries",
+      "status": "decided",
+      "enabled": false
+    }
+  ],
+  "production_infrastructure": {
+    "state": "dark_production_workers_deployed_but_no_member_access",
+    "d1_name": "starry-battery-production",
+    "r2_bucket": "starry-battery-ledger-production",
+    "member_rows": 0,
+    "app_client_rows": 0,
+    "transaction_rows": 0,
+    "verified_on": "2026-10-24",
+    "runtime_feature_flags": {
+      "BATTERY_OPERATIONS_ENABLED": false,
+      "BATTERY_OVERDRAFT_ENABLED": false,
+      "BATTERY_CREDIT_ENABLED": false,
+      "BATTERY_ARCHIVE_ENABLED": false
+    },
+    "private_workers": [
+      "starry-battery-engine-production",
+      "starry-battery-gateway-production",
+      "starry-battery-archive-production"
+    ],
+    "zero_production_wallets_verified": true,
+    "smoke_run_id": "battery-dark-production-smoke-20261024-01",
+    "smoke_passed": 6,
+    "smoke_total": 6,
+    "production_gated": true
+  },
+  "activation_blockers": [
+    "central private auth and revocation E2E",
+    "Starry App server key/scope enrollment",
+    "trusted gift, earned and migration credit issuers",
+    "production D1 backup/rollback validation",
+    "user deletion and R2 retention integration",
+    "full live API end-to-end smoke"
+  ]
+}
