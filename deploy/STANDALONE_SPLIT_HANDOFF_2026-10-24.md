@@ -17,7 +17,7 @@
 - 原 Battery production preflight `.github/workflows/starry-battery-production-preflight.yml`
 - 保留中央自身的 `central-id-v2/src/`、`central-id-v2/migrations/`、中央 CI／OAuth／Sessions，不搬中央身份會員程式到新 Repo。
 - 移轉工具：`central-id-v2/battery/deploy/bootstrap-standalone-repo.sh`；由 `git subtree split` 抽出 Battery 子目錄歷史，並建立 root-based GitHub Actions。
-- 新 Repo 初次建立建議 Private、Empty（不預填 README／License／Gitignore）；必須擁有 GitHub Repo 建立或 GitHub App 新 Repo 存取權。當前 GitHub connector 缺少 create_repository 動作，不能聲稱已建立。
+- **最新使用者正式決議：新 Repo 採 Public（公開原始碼）**，不需要改為 Private。`yukidu/starry-battery` 已建立並已有 Battery 程式及獨立 GitHub CI；初期『建議 Private／尚待建立』已過時。公開原始碼不代表公開 Cloudflare 內部 Worker、D1／R2 會員資料、API Token、Issuer/Caller Secrets 或受保護的部署憑證。
 
 ## 新 Repo 預計目錄
 ```text
@@ -52,9 +52,9 @@ starry-battery/
 ## 目前實際完成狀態（按證據分類）
 - [x] 使用者明確同意分 Repo，指定名稱 `starry-battery`。
 - [x] 在舊 Battery 專責分支提交可保留 subtree commit lineage 的安全匯出工具。
-- [ ] GitHub 新獨立 Repo 已建立（**目前尚未建立**）。
+- [x] GitHub 獨立 Repo `yukidu/starry-battery` 已建立，使用者確認為 **Public**。
 - [ ] Battery 程式與 Git 歷史已推送到新 Repo 的 main。
-- [ ] 新 Repo Github App 連線／CI 成功。
+- [x] 新 Repo GitHub App 已可讀取，獨立 CI 已通過（例如 run `40080523026`）；新 Repo 進一步 Preview／正式部署來源切換仍需驗收。
 - [ ] 新 Repo Preview Worker 發布源已更新與跨 Repo Auth E2E。
 - [ ] 新 Repo Production Gate／回退、正式可信 Apps 接入驗收。
 - [ ] 舊 `hglobal-id` Battery 目錄移除／舊 PR #37 封存（直到新 Repo 驗收，絕不可提前操作）。
