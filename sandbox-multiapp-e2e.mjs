@@ -1,8 +1,7 @@
 // One-shot isolated multi-App sandbox verification via PRIVATE Service Binding.
 // Only synthetic wallets in sandbox D1. Reports go to separate Battery E2E D1.
 const RUN_ID="starry-battery-multiapp-sandbox-e2e-20261024-01";
-export default{
- async scheduled(_ev,env){
+async function runSandbox(env){
   if(!env?.BATTERY_E2E_DB?.prepare||!env?.BATTERY_SANDBOX_GATEWAY?.fetch||!env?.SANDBOX_QA_APPS)throw Error("sandbox_e2e_not_configured");
   const db=env.BATTERY_E2E_DB;
   await db.prepare("CREATE TABLE IF NOT EXISTS battery_multiapp_sandbox_results(run_id TEXT PRIMARY KEY,passed INTEGER,total INTEGER,report TEXT)").run();
@@ -29,6 +28,17 @@ export default{
   await check("no_charge_in_sandbox",async()=>{const r=await ask(x.alpha,x.user1,"/v1/battery/reserve","POST");return r.status===503||r.status===415;});
   const passed=checks.filter(y=>y.pass).length,total=checks.length;
   await db.prepare("INSERT INTO battery_multiapp_sandbox_results(run_id,passed,total,report) VALUES(?,?,?,?)").bind(RUN_ID,passed,total,JSON.stringify({run_id:RUN_ID,passed,total,checks,synthetic_only:true,production_data:false})).run();
- },
- async fetch(){return new Response("not_found",{status:404})}
+ }
+export default {
+ async scheduled(_ev,env){await runSandbox(env);},
+ async fetch(request,env){
+  if(new URL(request.url).pathname!=="/__sandbox_e2e_once"||request.method!=="POST")return new Response("not_found",{status:404});
+  const expected=env?.SANDBOX_E2E_TRIGGER_SECRET;
+  const actual=request.headers.get("X-Sandbox-Run-Secret")||"";
+  if(typeof expected!=="string"||expected.length<40||actual.length!==expected.length)return new Response("forbidden",{status:403});
+  let mismatch=0;for(let i=0;i<actual.length;i++)mismatch|=actual.charCodeAt(i)^expected.charCodeAt(i);
+  if(mismatch)return new Response("forbidden",{status:403});
+  await runSandbox(env);
+  return new Response("sandbox_probe_completed",{status:200,headers:{"Cache-Control":"no-store"}});
+ }
 };
