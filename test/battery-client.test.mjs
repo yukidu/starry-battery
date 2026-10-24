@@ -20,8 +20,8 @@ test("client rejects non-HTTPS gateways, invalid tokens, and unsafe operation ID
  assert.throws(()=>new StarryBatteryClient({baseUrl:"http://battery.example",appId:"starry_echo",appKey:key}),/HTTPS/);
  const c=makeClient(async()=>new Response("{}",{status:200}));
  await assert.rejects(c.wallet(""),/Central Access token/);
- await assert.rejects(c.reserve("validtoken123",{operationId:"a",quantity:5}),/Invalid reservation/);
- await assert.rejects(c.reserve("validtoken123",{operationId:"operation123",quantity:0}),/Invalid reservation/);
+ assert.throws(()=>c.reserve("validtoken123",{operationId:"a",quantity:5}),/Invalid reservation/);
+ assert.throws(()=>c.reserve("validtoken123",{operationId:"operation123",quantity:0}),/Invalid reservation/);
  assert.throws(()=>c.ledger("validtoken123",{beforeId:"entry123456"}),/requires timestamp/);
 });
 test("client reports rate limiting and Central Auth failures without leaking app token",async()=>{
