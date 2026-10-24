@@ -1,0 +1,85 @@
+name: Starry Battery independent deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Isolated Battery environment"
+        required: true
+        type: choice
+        options: [preview, production]
+      schema_ready:
+        description: "Confirmed dedicated Battery D1 schema/migrations and recovery point"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ inputs.target == 'production' && 'production-starry-battery' || 'preview-starry-battery' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-battery-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.target == 'production' && 'battery-production' || 'battery-preview' }}
+    env:
+      BATTERY_TARGET: ${{ inputs.target }}
+      BATTERY_D1_ID: ${{ secrets.BATTERY_D1_DATABASE_ID }}
+      BATTERY_D1_NAME: ${{ vars.BATTERY_D1_NAME }}
+      BATTERY_R2_BUCKET: ${{ vars.BATTERY_R2_BUCKET }}
+      CENTRAL_AUTH_WORKER: ${{ vars.CENTRAL_AUTH_WORKER }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_BATTERY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      BATTERY_ENGINE_SECRET: ${{ secrets.BATTERY_ENGINE_SECRET }}
+      BATTERY_CREDIT_ISSUER_SECRET: ${{ secrets.BATTERY_CREDIT_ISSUER_SECRET }}
+      CENTRAL_AUTH_CALLER_SECRET: ${{ secrets.CENTRAL_AUTH_CALLER_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Require independent D1 migration gate and secret bindings
+        env:
+          SCHEMA_READY: ${{ inputs.schema_ready }}
+        run: |
+          set -eu
+          test "$SCHEMA_READY" = "true" || { echo "Dedicated Battery D1 schema not approved"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$BATTERY_D1_ID" && test -n "$BATTERY_D1_NAME"
+          test -n "$BATTERY_R2_BUCKET" || { echo "Isolated Battery R2 bucket is not configured"; exit 1; }
+          test "${#BATTERY_ENGINE_SECRET}" -ge 32 || { echo "Battery private engine secret not configured"; exit 1; }
+          test "${#BATTERY_CREDIT_ISSUER_SECRET}" -ge 32 || { echo "Privileged Battery credit issuer secret not configured"; exit 1; }
+          if [ -n "$CENTRAL_AUTH_WORKER" ]; then
+            test "${#CENTRAL_AUTH_CALLER_SECRET}" -ge 32 || { echo "Central Auth caller secret missing"; exit 1; }
+          fi
+          if [ "$BATTERY_TARGET" = production ]; then
+            node --input-type=module -e "import fs from 'node:fs';const c=JSON.parse(fs.readFileSync('rules-catalog.json'));if(c.production_ready!==true)process.exit(1)"
+          fi
+      - name: Unit and D1 schema safety gates
+        run: |
+          node --test test/*.test.mjs
+          python3 test/battery_schema_test.py
+          python3 test/battery_migration_test.py
+      - name: Generate isolated configs for the Battery Engine, Gateway and Archive
+        run: node deploy/generate-config.mjs
+      - name: Deploy private Engine only (not Central ID)
+        run: npx --yes wrangler@4 deploy --config .wrangler.engine.generated.json
+      - name: Set private Engine secret
+        run: printf '%s' "$BATTERY_ENGINE_SECRET" | npx --yes wrangler@4 secret put BATTERY_ENGINE_SECRET --config .wrangler.engine.generated.json
+      - name: Set separate privileged issuer secret on private Engine only
+        run: printf '%s' "$BATTERY_CREDIT_ISSUER_SECRET" | npx --yes wrangler@4 secret put BATTERY_CREDIT_ISSUER_SECRET --config .wrangler.engine.generated.json
+      - name: Deploy Battery Gateway only (not Central ID)
+        run: npx --yes wrangler@4 deploy --config .wrangler.gateway.generated.json
+      - name: Set Gateway-to-Engine secret
+        run: printf '%s' "$BATTERY_ENGINE_SECRET" | npx --yes wrangler@4 secret put BATTERY_ENGINE_SECRET --config .wrangler.gateway.generated.json
+      - name: Add trusted Central Auth caller secret to Gateway only
+        if: env.CENTRAL_AUTH_WORKER != ''
+        run: printf '%s' "$CENTRAL_AUTH_CALLER_SECRET" | npx --yes wrangler@4 secret put CENTRAL_AUTH_CALLER_SECRET --config .wrangler.gateway.generated.json
+      - name: Deploy separately disabled-by-default Battery R2 archiver
+        run: npx --yes wrangler@4 deploy --config .wrangler.archive.generated.json
+      - name: Deployment evidence and smoke reminder
+        run: echo "Record deployed SHA, preview URL, dedicated D1 migration evidence, actual Auth contract and healthy Gateway; Production is not accepted by this step alone."
