@@ -1,0 +1,54 @@
+name: Starry Battery standalone CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starry-battery-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  battery-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Node Engine Gateway Archive and Release tests
+        run: node --test test/*.test.mjs
+      - name: SQLite schema and forward-only migrations
+        run: |
+          python3 test/battery_schema_test.py
+          python3 test/battery_migration_test.py
+      - name: Validate Battery module syntax
+        run: |
+          node --check engine.mjs
+          node --check worker.mjs
+          node --check archive.mjs
+          node --check deploy/generate-config.mjs
+          node --check deploy/verify-battery-cloudflare.mjs
+      - name: Check isolated Preview config and disabled finance switches
+        env:
+          BATTERY_TARGET: preview
+          BATTERY_D1_ID: "00000000-0000-4000-8000-000000000000"
+          BATTERY_D1_NAME: "battery-ci-fixture"
+          BATTERY_R2_BUCKET: "starry-battery-ledger-ci-fixture"
+        run: |
+          node deploy/generate-config.mjs
+          node --input-type=module -e "import fs from 'node:fs';const e=JSON.parse(fs.readFileSync('.wrangler.engine.generated.json'));const g=JSON.parse(fs.readFileSync('.wrangler.gateway.generated.json'));const a=JSON.parse(fs.readFileSync('.wrangler.archive.generated.json'));if(e.name!=='starry-battery-engine-preview'||g.name!=='starry-battery-gateway-preview'||a.name!=='starry-battery-archive-preview'||e.vars.BATTERY_OPERATIONS_ENABLED!=='false'||e.vars.BATTERY_CREDIT_ENABLED!=='false'||e.vars.BATTERY_OVERDRAFT_ENABLED!=='false'||a.vars.BATTERY_ARCHIVE_ENABLED!=='false'||g.r2_buckets[0].bucket_name!=='starry-battery-ledger-ci-fixture')process.exit(1)"
+          rm .wrangler.*.generated.json
+      - name: Verify cross-App and Central auth boundaries
+        run: |
+          test -f CENTRAL_AUTH_BINDING_CONTRACT.md
+          test -f deploy/battery-targets.json
+          node --input-type=module -e "import fs from 'node:fs';const x=JSON.parse(fs.readFileSync('rules-catalog.json'));if(x.production_ready!==false)process.exit(1)"
+      - name: Confirm no Production deployment by CI
+        run: echo "Tests only; production feature flags remain off."
