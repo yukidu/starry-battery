@@ -38,3 +38,24 @@ test("CORS preflight only enables synthetic GET",async()=>{
  assert.equal(r.status,204);
  assert.equal(r.headers.get("access-control-allow-methods"),"GET,OPTIONS");
 });
+
+test("sandbox simulation accepts fake reserve/commit/release shapes but never persists charges",async()=>{
+ const send=(op,body)=>json(req("/sandbox/simulate/"+op,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}));
+ const reservation=await send("reserve",{operation_id:"sandbox_op_1234",quantity:5});
+ assert.equal(reservation.code,200);assert.equal(reservation.body.status,"reserved");
+ assert.equal(reservation.body.not_persisted,true);assert.equal(reservation.body.no_real_charges,true);
+ assert.equal(reservation.body.funded_units,5);
+ const commit=await send("commit",{operation_id:"sandbox_op_1234"});
+ assert.equal(commit.code,200);assert.equal(commit.body.status,"committed");assert.equal(commit.body.synthetic,true);
+ const released=await send("release",{operation_id:"sandbox_op_1234"});
+ assert.equal(released.code,200);assert.equal(released.body.status,"released");
+ const unchanged=await json(req("/v1/battery/wallet"));
+ assert.equal(unchanged.body.available_units,50);
+});
+test("sandbox simulation validates quantity, payload and refuses real App credentials",async()=>{
+ const send=(op,body,headers={})=>json(req("/sandbox/simulate/"+op,{method:"POST",headers:{"Content-Type":"application/json",...headers},body:JSON.stringify(body)}));
+ assert.equal((await send("reserve",{operation_id:"sandbox_op_1234",quantity:51})).code,400);
+ assert.equal((await send("reserve",{operation_id:"sandbox_op_1234",quantity:0})).code,400);
+ assert.equal((await send("commit",{operation_id:"sandbox_op_1234",user_id:"victim_user"})).code,400);
+ assert.equal((await send("commit",{operation_id:"sandbox_op_1234"},{Authorization:"Bearer real"})).code,400);
+});
