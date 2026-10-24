@@ -1,3 +1,11 @@
+## 2026-10-24｜多 App 私有 Sandbox 最新進度
+
+新的隔離私有驗收服務已建立：`starry-battery-multiapp-auth-preview-20261024`、`starry-battery-multiapp-gateway-preview-20261024`、`starry-battery-multiapp-engine-preview-20261024`。僅使用 `starry-battery-app-sandbox-20261024` D1 的兩名合成會員（25、42）與兩個測試 App（`starry_alpha_qa`、`starry_beta_qa`）；App 原始密鑰與假會員 Token 均未發布。
+
+**真實 Cloudflare E2E 第一輪：9/10 PASS**。兩款 App 使用不同 Key 讀取同一會員錢包、跨會員隔離、跨 App 密鑰冒用阻擋、H-Global 阻擋、會員 Token 偽造阻擋及最小 Scope 均通過。第 10 項「不得扣款」本來預期進到 Engine，實際 Gateway 因測試 App 無扣款 scope 提早安全拒絕；已把測試條件更正為檢查 `scope_forbidden`，**更正後 GitHub CI 通過，但雲端 E2E 第二輪尚未讀回**。不可宣稱真實 E2E 10/10。
+
+使用者可立即把本文件與 `client/server-battery-client.mjs` 提供其他 Starry App 的開發 AI，讓它們先實作伺服器端介面；**公開 Demo** 位址仍為 `https://starry-battery-api-sandbox-20261024.yukidu.workers.dev`。私有實測 App Token 和 Key 不公開發送，需逐 App 審核後透過安全憑證通道交付。正式電池與 AI 計費一律未開放。
+
 # Starry Battery｜30 款 App 接入手冊｜開發 Sandbox v1
 
 **進度：** 這份手冊描述獨立 Sandbox 展示 API 和正式 API 契約的界線。**這不是可用的正式電池金流服務**。
