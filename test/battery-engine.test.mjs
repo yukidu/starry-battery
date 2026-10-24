@@ -232,3 +232,18 @@ test("explicit disable of overdraft denies insufficient reserve while preserving
  assert.equal(result.data.error,"overdraft_temporarily_disabled");
  assert.equal(db.batches.length,0);
 });
+
+test("permanent free-only rule rejects IAP, external purchase, topup, subscriptions and unknown issuers without D1 writes",async()=>{
+ const secret="i".repeat(40),db=dbWith({wallet:0});
+ const env={BATTERY_DB:db,BATTERY_CREDIT_ISSUER_SECRET:secret,BATTERY_CREDIT_ENABLED:"true"};
+ for(const source of ["purchase","paid","iap","apple_iap","google_play","checkout","topup","recharge","subscription","external_payment","unknown_source"]){
+  const payload={credit_id:"credit_no_money_123",user_id:c.user_id,quantity:10,source,expires_at_ms:Date.now()+86400000};
+  const r=await json(await engine.fetch(new Request("https://battery-engine.internal/v1/credit",{
+   method:"POST",headers:{"Content-Type":"application/json","X-Battery-Credit-Authorization":"Bearer "+secret},
+   body:JSON.stringify(payload)
+  }),env));
+  assert.equal(r.code,403,source);
+  assert.equal(r.data.error,"paid_or_unapproved_battery_credit_forbidden",source);
+ }
+ assert.equal(db.batches.length,0,"paid or unknown grants must not write any wallet, lot or ledger rows");
+});

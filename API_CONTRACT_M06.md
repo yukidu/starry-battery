@@ -1,3 +1,8 @@
+## Highest-priority official decision — 2026-10-24 (overrides all older drafts)
+**Starry Battery is permanently FREE and can NEVER be purchased, topped up, exchanged for paid subscriptions, or minted by any payment, Apple/Google IAP or external checkout.** Payment status/receipt/provider events must never trigger `POST /v1/credit`. This is a permanent business prohibition, **not** a feature deferred until launch. Only specifically approved, audited, non-commercial **free** grant sources may use the private credit issuer (e.g. free gifts, eligible grants and legacy free claims); all paid or unknown `source` values are fail-closed by the Engine. H-Global does not use Battery.
+
+The user does **not** want pre-release Preview/Sandbox URLs shown or manual preview-site sign-off. Engineering CI, Sandbox/D1 isolation, security testing, protected PR/main and production rollback remain mandatory internally. After all legitimate release gates pass, proceed directly with **Production** and report only verified live results; do not falsely claim readiness.
+
 # Starry Battery API Contract — draft v0.1 (M06 alignment)
 
 Status: **development contract; NOT production-ready**. Authority: M06 latest Google Doc, 2026-10-24. Scope: Starry ecosystem only; H-Global MUST NOT bind, display, or use Battery API.
@@ -18,7 +23,7 @@ Starry App backend → authenticated Battery Gateway → private Battery Engine 
 2. No partial charge on failed or timed-out AI task; FEFO and atomicity across lot, reservation, wallet and ledger.
 3. Normal lot expiry: end of issue month two years later by default. Expiry notices three months before expiry via deduplicated supported channels.
 4. Signup X=10 and first central approval Y=20 are **initial planning values**, not enabled policy until checked against current admin settings and 01/02; each eligible new event at most once; no backfill for existing users.
-5. Legacy balance claim is one-time, trusted, idempotent; no replay of old transactions. Deleted accounts lose unspent gifted units per formal policy. Purchasing remains disabled.
+5. Legacy balance claim is one-time, trusted, idempotent; no replay of old transactions. Deleted accounts lose unspent gifted units per formal policy. Purchasing is permanently forbidden (including future IAP, web checkout, top-ups, subscriptions, or any payment-to-battery conversion).
 6. Keep most recent year of detailed ledger in D1; reconcile then archive older history in Starry R2 while preserving queryability. R2 archive is not a new central D1 backup.
 7. Preview and Production credentials, D1 and bindings are isolated. Versioning must be additive; breaking changes require opt-in version, App-by-App compatibility tests and rollback.
 
@@ -38,3 +43,6 @@ Implementation tracking: isolated Battery Draft PR #37 (ported from mixed PR #34
 - `GET /v1/battery/ledger` 必須先取得 App `ledger:read` + 中央 Starry 身分驗證；無私有 `BATTERY_ARCHIVE_R2` Binding 時 fail closed 503。新支援 `before_ms` + `before_id` 游標，最多 50 筆，以可信任 user_id 合併 D1 與 R2；R2 物件讀回以 SHA-256 與 owner/entry_id 一致性驗證，缺物件／校驗不符返回 503，不隱瞞歷史資料損毀。
 - 唯一私有發放入口位於**非公開 Engine** `POST /v1/credit`，需要專用 `BATTERY_CREDIT_ISSUER_SECRET`，普通 Gateway Engine Secret 不可授權。需 `credit_id,user_id,source,quantity,expires_at_ms`；只有合法中央管理／註冊／核准／遷入服務才可持有金鑰，普通 Starry App 及瀏覽器不可使用。信用發放先抵債，剩餘再入有效 FEFO lot；同一 credit_id 改變數量、會員、來源或到期日即衝突拒絕。
 - R2/D1 真實獨立 E2E run `bat-r2-archive-e2e-20261024-01` PASS，且 sandbox fake records 清理完成；D1 14/14 run `bat-d1-e2e-overdraft-20261024-05` PASS。正式 archive 預設禁用，正式 Production 仍需中央驗證、逐 App auth、可信發放事件、刪帳隱私與 migration/rollback。
+
+## Free credit issuer (2026-10-24 permanent policy)
+The Engine now uses a reviewed `FREE_CREDIT_SOURCES` allowlist. Its private credit endpoint never accepts source labels for purchase, IAP, external payment, recharge, top-up, subscription, checkout or other unapproved grants; even a valid issuer secret cannot override this validation. Every future **free** event source requires an explicit code and policy review. The central AI may build payment services for other H-Global/Starry goods, but their financial events have **no Battery issuer rights**.

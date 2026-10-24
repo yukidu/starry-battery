@@ -1,5 +1,5 @@
 {
-  "catalog_version": "2026-10-24.5",
+  "catalog_version": "2026-10-24.6",
   "authority": "M06 official Google Doc, this catalog is an implementation index not a new decision",
   "m06_url": "https://docs.google.com/document/d/10XEaZagWP_hwF1kn3JidrjYyfE3-7L9SZLND2CZdAXA/edit",
   "overview_url": "https://docs.google.com/document/d/1T-SXNilxJ9QnwHotDkFAC3OHIbZtpPo0KJ8PgcDeRLc/edit",
@@ -115,9 +115,19 @@
     },
     {
       "id": "BAT-C04",
-      "name": "Purchasing batteries",
+      "name": "Battery permanently free — paid purchase, recharge and conversion forbidden",
       "status": "decided",
-      "enabled": false
+      "enabled": false,
+      "forever_forbidden": true,
+      "paid_purchase_allowed": false,
+      "recharge_allowed": false,
+      "in_app_purchase_allowed": false,
+      "external_purchase_allowed": false,
+      "subscription_to_battery_allowed": false,
+      "payment_to_credit_allowed": false,
+      "allowed_paid_credit_sources": [],
+      "decision_date": "2026-10-24",
+      "supersedes": "All previous proposals to sell batteries, preserve future purchase capability, or credit purchases"
     }
   ],
   "production_infrastructure": {
@@ -152,5 +162,19 @@
     "production D1 backup/rollback validation",
     "user deletion and R2 retention integration",
     "full live API end-to-end smoke"
-  ]
+  ],
+  "battery_monetization": {
+    "forever_free": true,
+    "purchase_forbidden": true,
+    "topup_forbidden": true,
+    "payment_events_may_issue_batteries": false,
+    "paid_ai_compute_costs_still_require_abuse_controls": true
+  },
+  "release_communication": {
+    "share_preview_urls_with_user_before_production": false,
+    "run_internal_preview_and_security_tests": true,
+    "deploy_production_directly_after_all_gates": true,
+    "preserve_branch_pr_ci_and_production_health_checks": true,
+    "claim_production_live_only_after_verified": true
+  }
 }

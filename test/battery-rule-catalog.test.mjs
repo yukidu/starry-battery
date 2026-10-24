@@ -38,3 +38,21 @@ test("technical defaults match the current approved API contract",()=>{
  assert.deepEqual(rate.rate_limit_schema_range,[1,10000]);
  assert.equal(timeout.timeout_default_seconds,180);
 });
+
+test("latest official policy permanently forbids Battery payment and requires internal testing without preview URLs to user",()=>{
+ const purchase=rules.find(x=>x.id==="BAT-C04");
+ assert.equal(purchase.status,"decided");
+ assert.equal(purchase.enabled,false);
+ assert.equal(purchase.forever_forbidden,true);
+ assert.equal(purchase.paid_purchase_allowed,false);
+ assert.equal(purchase.in_app_purchase_allowed,false);
+ assert.equal(purchase.external_purchase_allowed,false);
+ assert.equal(purchase.payment_to_credit_allowed,false);
+ assert.deepEqual(purchase.allowed_paid_credit_sources,[]);
+ assert.equal(catalog.battery_monetization.forever_free,true);
+ assert.equal(catalog.battery_monetization.payment_events_may_issue_batteries,false);
+ assert.equal(catalog.release_communication.share_preview_urls_with_user_before_production,false);
+ assert.equal(catalog.release_communication.run_internal_preview_and_security_tests,true);
+ assert.equal(catalog.release_communication.deploy_production_directly_after_all_gates,true);
+ assert.equal(catalog.production_ready,false,"policy update cannot falsely mark entire product live");
+});
