@@ -25,7 +25,7 @@ export default{
     return response({...banner,available_read_routes:["GET /health","GET /v1/battery/wallet","GET /v1/battery/ledger","GET /sandbox/capabilities","POST /sandbox/simulate/reserve","POST /sandbox/simulate/commit","POST /sandbox/simulate/release"],live_api_required_for:["usage:reserve","usage:commit","usage:release","grant","purchase"],note:"Demonstration only. Values are constants, not a connected member wallet."});
   // Explicitly simulated request/response shapes only. No reservation is persisted,
   // no member exists, and no AI inference or paid battery can be triggered.
-  const simulated=/^\\/sandbox\\/simulate\\/(reserve|commit|release)$/.exec(url.pathname);
+  const simulated=({"/sandbox/simulate/reserve":"reserve","/sandbox/simulate/commit":"commit","/sandbox/simulate/release":"release"})[url.pathname];
   if(simulated&&request.method==="POST"){
    if(!/^application\\/json(?:;|$)/i.test(request.headers.get("Content-Type")||""))
      return response({...banner,error:"invalid_demo_content_type"},415);
@@ -33,14 +33,14 @@ export default{
    try{const raw=await request.text();if(raw.length>512)return response({...banner,error:"demo_payload_too_large"},413);value=JSON.parse(raw);}
    catch{return response({...banner,error:"invalid_demo_json"},400);}
    if(!value||typeof value!=="object"||Array.isArray(value)||
-     Object.keys(value).sort().join(",")!==(simulated[1]==="reserve"?"operation_id,quantity":"operation_id")||
+     Object.keys(value).sort().join(",")!==(simulated==="reserve"?"operation_id,quantity":"operation_id")||
      !/^[A-Za-z0-9_-]{8,120}$/.test(value.operation_id||"")||
-     (simulated[1]==="reserve"&&(!Number.isSafeInteger(value.quantity)||value.quantity<1||value.quantity>50)))
+     (simulated==="reserve"&&(!Number.isSafeInteger(value.quantity)||value.quantity<1||value.quantity>50)))
      return response({...banner,error:"invalid_demo_operation"},400);
    return response({...banner,not_persisted:true,no_real_charges:true,
      operation_id:value.operation_id,reservation_id:"demo_"+value.operation_id,
-     status:simulated[1]==="reserve"?"reserved":simulated[1]==="commit"?"committed":"released",
-     ...(simulated[1]==="reserve"?{quantity:value.quantity,funded_units:value.quantity,overdraft_units:0,deadline_at_ms:Date.now()+180000}:{})});
+     status:simulated==="reserve"?"reserved":simulated==="commit"?"committed":"released",
+     ...(simulated==="reserve"?{quantity:value.quantity,funded_units:value.quantity,overdraft_units:0,deadline_at_ms:Date.now()+180000}:{})});
   }
   if(url.pathname.startsWith("/v1/battery/")&&request.method!=="GET")
     return response({...banner,error:"demo_write_disabled",live_transaction_performed:false},405);
