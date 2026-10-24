@@ -17,4 +17,9 @@ const denied=await read("/v1/battery/wallet",{headers:{"Authorization":"Bearer f
 assert.equal(denied.status,400);assert.equal(denied.body.error,"never_send_real_credentials_to_demo");
 const forbidden=await read("/v1/battery/reserve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({operation_id:"sandboxop123",quantity:1})});
 assert.equal(forbidden.status,405);assert.equal(forbidden.body.error,"demo_write_disabled");
-console.log("PASS: external synthetic Battery demo 5/5; no sensitive credentials or Production writes");
+const synthetic=await read("/sandbox/simulate/reserve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({operation_id:"sandbox_op_1234",quantity:3})});
+assert.equal(synthetic.status,200);assert.equal(synthetic.body.not_persisted,true);assert.equal(synthetic.body.status,"reserved");
+const fakeCommit=await read("/sandbox/simulate/commit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({operation_id:"sandbox_op_1234"})});
+assert.equal(fakeCommit.status,200);assert.equal(fakeCommit.body.no_real_charges,true);
+const again=await read("/v1/battery/wallet");assert.equal(again.body.available_units,50);
+console.log("PASS: external synthetic Battery demo 8/8, including simulation without persistence");
